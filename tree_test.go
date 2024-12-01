@@ -277,6 +277,48 @@ func TestDeleteRange(t *testing.T) {
 	}
 }
 
+func TestFromClosed(t *testing.T) {
+	test := func(order int, n int, from int) {
+		tree := New[int, string](order)
+
+		for i := 0; i < n; i++ {
+			tree.Insert(i, fmt.Sprint(i))
+		}
+
+		s := slices.Collect(SeqFirst(tree.FromClosed(from)))
+		master := slices.Collect(Range_(from, n))
+
+		if slices.Compare(s, master) != 0 {
+			t.Fatalf("%v, %v", s, master)
+		}
+	}
+
+	test(3, 100, 3)
+	test(10, 1000, 100)
+	test(15, 10000, 500)
+}
+
+func TestFromOpened(t *testing.T) {
+	test := func(order int, n int, from int) {
+		tree := New[int, string](order)
+
+		for i := 0; i < n; i++ {
+			tree.Insert(i, fmt.Sprint(i))
+		}
+
+		s := slices.Collect(SeqFirst(tree.FromOpened(from)))
+		master := slices.Collect(Range_(from+1, n))
+
+		if slices.Compare(s, master) != 0 {
+			t.Fatalf("%v, %v", s, master)
+		}
+	}
+
+	test(3, 100, 3)
+	test(10, 1000, 100)
+	test(15, 10000, 500)
+}
+
 func TestMinimum(t *testing.T) {
 	tree := New[int, string](3)
 

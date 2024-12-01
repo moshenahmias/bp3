@@ -447,6 +447,37 @@ func (t *tree[K, V]) RangeHighHalfOpened(from, to K) iter.Seq2[K, V] {
 	return t.Range(RangeValue[K]{from, true}, RangeValue[K]{to, false})
 }
 
+func (t *tree[K, V]) From(from RangeValue[K]) iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		node, i, _ := find(t.root, from.Value)
+
+		for node != nil {
+			for i < len(node.values) {
+				key := node.values[i].key
+
+				if !(key < from.Value || (!from.Closed && key == from.Value)) {
+					if !yield(key, node.values[i].value) {
+						return
+					}
+				}
+
+				i++
+			}
+
+			i = 0
+			node = node.next
+		}
+	}
+}
+
+func (t *tree[K, V]) FromClosed(from K) iter.Seq2[K, V] {
+	return t.From(RangeValue[K]{from, true})
+}
+
+func (t *tree[K, V]) FromOpened(from K) iter.Seq2[K, V] {
+	return t.From(RangeValue[K]{from, false})
+}
+
 func (t *tree[K, V]) Delete(key K) (V, bool) {
 	v, deleted, newMin := delete(t.root, key, t.min, t.order)
 
