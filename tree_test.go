@@ -2,6 +2,8 @@ package bp3
 
 import (
 	"fmt"
+	"iter"
+	"slices"
 	"testing"
 
 	"golang.org/x/exp/constraints"
@@ -106,4 +108,229 @@ func TestDelete(t *testing.T) {
 	test(10, 1000, map[int]bool{4: true, 605: false, 900: true})
 	test(15, 10000, map[int]bool{10: false, 20: true, 999: true})
 	test(3, 1, map[int]bool{0: true})
+}
+
+func TestRangeClosed(t *testing.T) {
+	test := func(order int, n int, from, to int) {
+		tree := New[int, string](order)
+
+		for i := 0; i < n; i++ {
+			tree.Insert(i, fmt.Sprint(i))
+		}
+
+		s := slices.Collect(SeqFirst(tree.RangeClosed(from, to)))
+		master := slices.Collect(Range_(from, to+1))
+
+		if slices.Compare(s, master) != 0 {
+			t.Fatalf("%v, %v", s, master)
+		}
+	}
+
+	test(3, 100, 3, 50)
+	test(10, 1000, 100, 700)
+	test(15, 10000, 500, 2005)
+}
+
+func TestRangeOpened(t *testing.T) {
+	test := func(order int, n int, from, to int) {
+		tree := New[int, string](order)
+
+		for i := 0; i < n; i++ {
+			tree.Insert(i, fmt.Sprint(i))
+		}
+
+		s := slices.Collect(SeqFirst(tree.RangeOpened(from, to)))
+		master := slices.Collect(Range_(from+1, to))
+
+		if slices.Compare(s, master) != 0 {
+			t.Fatalf("%v, %v", s, master)
+		}
+	}
+
+	test(3, 100, 3, 50)
+	test(10, 1000, 100, 700)
+	test(15, 10000, 500, 2005)
+}
+
+func TestRangeLowHalfOpened(t *testing.T) {
+	test := func(order int, n int, from, to int) {
+		tree := New[int, string](order)
+
+		for i := 0; i < n; i++ {
+			tree.Insert(i, fmt.Sprint(i))
+		}
+
+		s := slices.Collect(SeqFirst(tree.RangeLowHalfOpened(from, to)))
+		master := slices.Collect(Range_(from+1, to+1))
+
+		if slices.Compare(s, master) != 0 {
+			t.Fatalf("%v, %v", s, master)
+		}
+	}
+
+	test(3, 100, 3, 50)
+	test(10, 1000, 100, 700)
+	test(15, 10000, 500, 2005)
+}
+
+func TestRangeHighHalfOpened(t *testing.T) {
+	test := func(order int, n int, from, to int) {
+		tree := New[int, string](order)
+
+		for i := 0; i < n; i++ {
+			tree.Insert(i, fmt.Sprint(i))
+		}
+
+		s := slices.Collect(SeqFirst(tree.RangeHighHalfOpened(from, to)))
+		master := slices.Collect(Range_(from, to))
+
+		if slices.Compare(s, master) != 0 {
+			t.Fatalf("%v, %v", s, master)
+		}
+	}
+
+	test(3, 100, 3, 50)
+	test(10, 1000, 100, 700)
+	test(15, 10000, 500, 2005)
+}
+
+func TestRangeMissingLeft(t *testing.T) {
+	tree := New[int, string](3)
+
+	for i := 20; i < 50; i++ {
+		tree.Insert(i, fmt.Sprint(i))
+	}
+
+	s := slices.Collect(SeqFirst(tree.RangeClosed(10, 30)))
+	master := slices.Collect(Range_(20, 31))
+
+	if slices.Compare(s, master) != 0 {
+		t.Fatalf("%v, %v", s, master)
+	}
+}
+
+func TestRangeMissingRight(t *testing.T) {
+	tree := New[int, string](3)
+
+	for i := 20; i < 50; i++ {
+		tree.Insert(i, fmt.Sprint(i))
+	}
+
+	s := slices.Collect(SeqFirst(tree.RangeClosed(30, 60)))
+	master := slices.Collect(Range_(30, 50))
+
+	if slices.Compare(s, master) != 0 {
+		t.Fatalf("%v, %v", s, master)
+	}
+}
+
+func TestRangeMissingLeftRight(t *testing.T) {
+	tree := New[int, string](3)
+
+	for i := 20; i < 50; i++ {
+		tree.Insert(i, fmt.Sprint(i))
+	}
+
+	s := slices.Collect(SeqFirst(tree.RangeClosed(10, 60)))
+	master := slices.Collect(Range_(20, 50))
+
+	if slices.Compare(s, master) != 0 {
+		t.Fatalf("%v, %v", s, master)
+	}
+}
+
+func TestRangeMissingMiddle(t *testing.T) {
+	tree := New[int, string](3)
+
+	for i := 20; i < 30; i++ {
+		tree.Insert(i, fmt.Sprint(i))
+	}
+
+	for i := 31; i < 50; i++ {
+		tree.Insert(i, fmt.Sprint(i))
+	}
+
+	s := slices.Collect(SeqFirst(tree.RangeClosed(30, 50)))
+	master := slices.Collect(Range_(31, 50))
+
+	if slices.Compare(s, master) != 0 {
+		t.Fatalf("%v, %v", s, master)
+	}
+}
+
+func TestDeleteRange(t *testing.T) {
+	tree := New[int, string](3)
+
+	for i := 0; i < 5; i++ {
+		tree.Insert(i, fmt.Sprint(i))
+	}
+
+	if _, deleted := tree.Delete(3); !deleted {
+		t.Fail()
+	}
+
+	s := slices.Collect(SeqFirst(tree.RangeClosed(0, 5)))
+	master := []int{0, 1, 2, 4}
+
+	if slices.Compare(s, master) != 0 {
+		t.Fatalf("%v, %v", s, master)
+	}
+}
+
+func TestMinimum(t *testing.T) {
+	tree := New[int, string](3)
+
+	for i := 0; i < 5; i++ {
+		tree.Insert(i, fmt.Sprint(i))
+	}
+
+	if minimum := tree.Minimum(); minimum != "0" {
+		t.Fatal(minimum)
+	}
+}
+
+func TestMaximum(t *testing.T) {
+	tree := New[int, string](3)
+
+	for i := 0; i < 5; i++ {
+		tree.Insert(i, fmt.Sprint(i))
+	}
+
+	if maximum := tree.Maximum(); maximum != "4" {
+		t.Fatal(maximum)
+	}
+}
+
+// TODO: move to a different pacakge
+
+func SeqFirst[K, V any](seq iter.Seq2[K, V]) iter.Seq[K] {
+	return func(yield func(K) bool) {
+		for k, _ := range seq {
+			if !yield(k) {
+				return
+			}
+		}
+	}
+}
+
+func SeqSecond[K, V any](seq iter.Seq2[K, V]) iter.Seq[V] {
+	return func(yield func(V) bool) {
+		for _, v := range seq {
+			if !yield(v) {
+				return
+			}
+		}
+	}
+}
+
+func Range_[T constraints.Integer](from, to T) iter.Seq[T] {
+	return func(yield func(T) bool) {
+		for from < to {
+			if !yield(from) {
+				return
+			}
+
+			from++
+		}
+	}
 }
