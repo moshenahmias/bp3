@@ -478,6 +478,44 @@ func (t *tree[K, V]) FromOpened(from K) iter.Seq2[K, V] {
 	return t.From(RangeValue[K]{from, false})
 }
 
+func (t *tree[K, V]) To(to RangeValue[K]) iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		node := minimum(t.root)
+		i := 0
+
+		for node != nil {
+			for i < len(node.values) {
+				key := node.values[i].key
+
+				if key > to.Value {
+					return
+				}
+
+				if !to.Closed && key == to.Value {
+					return
+				}
+
+				if !yield(key, node.values[i].value) {
+					return
+				}
+
+				i++
+			}
+
+			i = 0
+			node = node.next
+		}
+	}
+}
+
+func (t *tree[K, V]) ToClosed(to K) iter.Seq2[K, V] {
+	return t.To(RangeValue[K]{to, true})
+}
+
+func (t *tree[K, V]) ToOpened(to K) iter.Seq2[K, V] {
+	return t.To(RangeValue[K]{to, false})
+}
+
 func (t *tree[K, V]) Delete(key K) (V, bool) {
 	v, deleted, newMin := delete(t.root, key, t.min, t.order)
 

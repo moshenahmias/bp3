@@ -319,6 +319,48 @@ func TestFromOpened(t *testing.T) {
 	test(15, 10000, 500)
 }
 
+func TestToClosed(t *testing.T) {
+	test := func(order int, n int, to int) {
+		tree := New[int, string](order)
+
+		for i := 0; i < n; i++ {
+			tree.Insert(i, fmt.Sprint(i))
+		}
+
+		s := slices.Collect(SeqFirst(tree.ToClosed(to)))
+		master := slices.Collect(Range_(0, to+1))
+
+		if slices.Compare(s, master) != 0 {
+			t.Fatalf("%v, %v", s, master)
+		}
+	}
+
+	test(3, 100, 3)
+	test(10, 1000, 100)
+	test(15, 10000, 500)
+}
+
+func TestToOpened(t *testing.T) {
+	test := func(order int, n int, to int) {
+		tree := New[int, string](order)
+
+		for i := 0; i < n; i++ {
+			tree.Insert(i, fmt.Sprint(i))
+		}
+
+		s := slices.Collect(SeqFirst(tree.ToOpened(to)))
+		master := slices.Collect(Range_(0, to))
+
+		if slices.Compare(s, master) != 0 {
+			t.Fatalf("%v, %v", s, master)
+		}
+	}
+
+	test(3, 100, 3)
+	test(10, 1000, 100)
+	test(15, 10000, 500)
+}
+
 func TestMinimum(t *testing.T) {
 	tree := New[int, string](3)
 
