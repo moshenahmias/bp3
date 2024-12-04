@@ -3,6 +3,7 @@ package bp3
 import (
 	"cmp"
 	"fmt"
+	"iter"
 	"math"
 	"slices"
 
@@ -18,6 +19,8 @@ type node[K constraints.Ordered, V any] struct {
 	mins     []K
 	children []*node[K, V]
 	values   []keyValue[K, V]
+	next     *node[K, V]
+	prev     *node[K, V]
 }
 
 func (n *node[K, V]) count() int {
@@ -57,6 +60,14 @@ func insert[K constraints.Ordered, V any](root *node[K, V], minimum K, item keyV
 		brother := &node[K, V]{values: slices.Clone(root.values[count/2:])}
 
 		root.values = root.values[:count/2]
+
+		if root.next != nil {
+			brother.next = root.next
+			root.next.prev = brother
+		}
+
+		brother.prev = root
+		root.next = brother
 
 		return root, root.values[0].key, brother, brother.values[0].key
 	}
@@ -124,9 +135,9 @@ func insert[K constraints.Ordered, V any](root *node[K, V], minimum K, item keyV
 	return root, min(minimum, parentMin), brother, brotherMin
 }
 
-func find[K constraints.Ordered, V any](root *node[K, V], key K) (V, bool) {
+func find[K constraints.Ordered, V any](root *node[K, V], key K) (*node[K, V], int, bool) {
 	if root == nil {
-		return *new(V), false
+		return nil, *new(int), false
 	}
 
 	if root.leaf() {
@@ -134,11 +145,7 @@ func find[K constraints.Ordered, V any](root *node[K, V], key K) (V, bool) {
 			return cmp.Compare(a.key, b)
 		})
 
-		if !found {
-			return *new(V), false
-		}
-
-		return root.values[i].value, true
+		return root, i, found
 	}
 
 	i, found := slices.BinarySearch(root.mins, key)
@@ -254,6 +261,18 @@ func delete[K constraints.Ordered, V any](root *node[K, V], key K, minimum K, or
 		}
 
 		parent.values = nil
+
+		if parent.prev != nil && parent.next != nil {
+			// middle
+			parent.prev, parent.next.prev = parent.next, parent.prev
+		} else if parent.prev != nil {
+			// last
+			parent.prev.next = nil
+		} else if parent.next != nil {
+			// first
+			parent.next.prev = nil
+		}
+
 		root.children = slices.Delete(root.children, parentIdx+1, parentIdx+2)
 
 		if parentIdx < 0 {
@@ -317,6 +336,22 @@ func delete[K constraints.Ordered, V any](root *node[K, V], key K, minimum K, or
 	return v, deleted, newMin
 }
 
+func minimum[K constraints.Ordered, V any](root *node[K, V]) *node[K, V] {
+	if root == nil || root.leaf() {
+		return root
+	}
+
+	return minimum(root.children[0])
+}
+
+func maximum[K constraints.Ordered, V any](root *node[K, V]) *node[K, V] {
+	if root == nil || root.leaf() {
+		return root
+	}
+
+	return maximum(root.children[len(root.children)-1])
+}
+
 type tree[K constraints.Ordered, V any] struct {
 	root  *node[K, V]
 	min   K
@@ -349,7 +384,136 @@ func (t *tree[K, V]) Insert(key K, value V) {
 }
 
 func (t *tree[K, V]) Find(key K) (V, bool) {
-	return find(t.root, key)
+	if node, i, found := find(t.root, key); found {
+		return node.values[i].value, true
+	}
+
+	return *new(V), false
+}
+
+type RangeValue[K constraints.Ordered] struct {
+	Value  K
+	Closed bool
+}
+
+func (t *tree[K, V]) Range(from, to RangeValue[K]) iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		if to.Value < from.Value {
+			return
+		}
+
+		node, i, _ := find(t.root, from.Value)
+
+		for node != nil {
+			for i < len(node.values) {
+				key := node.values[i].key
+
+				if key > to.Value {
+					return
+				}
+
+				if !to.Closed && key == to.Value {
+					return
+				}
+
+				if !(key < from.Value || (!from.Closed && key == from.Value)) {
+					if !yield(key, node.values[i].value) {
+						return
+					}
+				}
+
+				i++
+			}
+
+			i = 0
+			node = node.next
+		}
+	}
+}
+
+func (t *tree[K, V]) RangeClosed(from, to K) iter.Seq2[K, V] {
+	return t.Range(RangeValue[K]{from, true}, RangeValue[K]{to, true})
+}
+
+func (t *tree[K, V]) RangeOpened(from, to K) iter.Seq2[K, V] {
+	return t.Range(RangeValue[K]{from, false}, RangeValue[K]{to, false})
+}
+
+func (t *tree[K, V]) RangeLowHalfOpened(from, to K) iter.Seq2[K, V] {
+	return t.Range(RangeValue[K]{from, false}, RangeValue[K]{to, true})
+}
+
+func (t *tree[K, V]) RangeHighHalfOpened(from, to K) iter.Seq2[K, V] {
+	return t.Range(RangeValue[K]{from, true}, RangeValue[K]{to, false})
+}
+
+func (t *tree[K, V]) From(from RangeValue[K]) iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		node, i, _ := find(t.root, from.Value)
+
+		for node != nil {
+			for i < len(node.values) {
+				key := node.values[i].key
+
+				if !(key < from.Value || (!from.Closed && key == from.Value)) {
+					if !yield(key, node.values[i].value) {
+						return
+					}
+				}
+
+				i++
+			}
+
+			i = 0
+			node = node.next
+		}
+	}
+}
+
+func (t *tree[K, V]) FromClosed(from K) iter.Seq2[K, V] {
+	return t.From(RangeValue[K]{from, true})
+}
+
+func (t *tree[K, V]) FromOpened(from K) iter.Seq2[K, V] {
+	return t.From(RangeValue[K]{from, false})
+}
+
+func (t *tree[K, V]) To(to RangeValue[K]) iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		node := minimum(t.root)
+		i := 0
+
+		for node != nil {
+			for i < len(node.values) {
+				key := node.values[i].key
+
+				if key > to.Value {
+					return
+				}
+
+				if !to.Closed && key == to.Value {
+					return
+				}
+
+				if !yield(key, node.values[i].value) {
+					return
+				}
+
+				i++
+			}
+
+			i = 0
+			node = node.next
+		}
+	}
+}
+
+func (t *tree[K, V]) ToClosed(to K) iter.Seq2[K, V] {
+	return t.To(RangeValue[K]{to, true})
+}
+
+func (t *tree[K, V]) ToOpened(to K) iter.Seq2[K, V] {
+	return t.To(RangeValue[K]{to, false})
 }
 
 func (t *tree[K, V]) Delete(key K) (V, bool) {
@@ -375,4 +539,20 @@ func (t *tree[K, V]) Size() int {
 
 func (t *tree[K, V]) Empty() bool {
 	return t.Size() == 0
+}
+
+func (t *tree[K, V]) Minimum() V {
+	if node := minimum(t.root); node != nil {
+		return node.values[0].value
+	}
+
+	panic("bp3: empty tree")
+}
+
+func (t *tree[K, V]) Maximum() V {
+	if node := maximum(t.root); node != nil {
+		return node.values[len(node.values)-1].value
+	}
+
+	panic("bp3: empty tree")
 }
