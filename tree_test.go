@@ -9,18 +9,18 @@ import (
 	"golang.org/x/exp/constraints"
 )
 
-func slice[K constraints.Ordered, V any](root *node[K, V]) []keyValue[K, V] {
-	if root == nil {
+func slice[K constraints.Ordered, V any](root NodeDescriptor[K, V]) []KeyValue[K, V] {
+	if root == nil || root.Read() == nil {
 		return nil
 	}
 
-	if root.leaf() {
-		return root.values
+	if root.Read().Leaf() {
+		return root.Read().Values
 	}
 
-	var s []keyValue[K, V]
+	var s []KeyValue[K, V]
 
-	for _, child := range root.children {
+	for _, child := range root.Read().Children {
 		s = append(s, slice(child)...)
 	}
 
@@ -35,11 +35,11 @@ func TestInsert(t *testing.T) {
 			tree.Insert(i, fmt.Sprint(i))
 		}
 
-		if size := tree.Size(); size != n {
+		if size := tree.Size; size != n {
 			t.Fatalf("size %d != %d", size, n)
 		}
 
-		s := slice(tree.root)
+		s := slice(tree.Root)
 
 		if len(s) != n {
 			t.Fatalf("slice size %d != %d", len(s), n)
@@ -50,7 +50,7 @@ func TestInsert(t *testing.T) {
 
 			}
 
-			if s[i].key != i || s[i].value != fmt.Sprint(i) {
+			if s[i].Key != i || s[i].Value != fmt.Sprint(i) {
 				t.Fatalf("%d not in position", i)
 			}
 		}
@@ -81,7 +81,7 @@ func TestDelete(t *testing.T) {
 			}
 		}
 
-		if size := tree.Size(); size != n-len(del) {
+		if size := tree.Size; size != n-len(del) {
 			t.Fatalf("size %d != %d", size, n-len(del))
 		}
 
