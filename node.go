@@ -30,20 +30,20 @@ func (n *Node[K, V]) Leaf() bool {
 	return len(n.Values) > 0
 }
 
-// NodeDescriptor is an interface that defines methods for reading and writing nodes.
+// NodeDescriptor defines methods for reading and writing nodes.
 // The generic parameters K and V are for the key and value types, respectively, where K must be ordered.
 type NodeDescriptor[K constraints.Ordered, V any] interface {
 	Read() *Node[K, V]  // Read returns a pointer to the node.
 	Write() *Node[K, V] // Write returns a pointer to the node for modification.
 }
 
-// NodeLoader is an interface that defines a method for loading node descriptors.
+// NodeLoader defines a method for loading node descriptors.
 // The generic parameters K and V are for the key and value types, respectively, where K must be ordered.
 type NodeLoader[K constraints.Ordered, V any] interface {
 	Load(d NodeDescriptor[K, V]) // Load loads the specified node descriptor.
 }
 
-// NodeBuilder is an interface that defines methods for creating, updating, deleting, and flushing nodes.
+// NodeBuilder defines methods for creating, updating, and deleting nodes.
 // The generic parameters K and V are for the key and value types, respectively, where K must be ordered.
 type NodeBuilder[K constraints.Ordered, V any] interface {
 	Create(node *Node[K, V]) NodeDescriptor[K, V] // Create creates a new node descriptor for the given node.

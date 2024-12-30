@@ -1,6 +1,7 @@
 package bp3
 
 import (
+	"cmp"
 	"fmt"
 	"iter"
 	"slices"
@@ -8,24 +9,6 @@ import (
 
 	"golang.org/x/exp/constraints"
 )
-
-func slice[K constraints.Ordered, V any](root NodeDescriptor[K, V]) []KeyValue[K, V] {
-	if root == nil || root.Read() == nil {
-		return nil
-	}
-
-	if root.Read().Leaf() {
-		return root.Read().Values
-	}
-
-	var s []KeyValue[K, V]
-
-	for _, child := range root.Read().Children {
-		s = append(s, slice(child)...)
-	}
-
-	return s
-}
 
 func TestInsert(t *testing.T) {
 	test := func(order int, n int) {
@@ -39,7 +22,7 @@ func TestInsert(t *testing.T) {
 			t.Fatalf("size %d != %d", size, n)
 		}
 
-		s := slice(tree.Root)
+		s := Slice(tree.Root)
 
 		if len(s) != n {
 			t.Fatalf("slice size %d != %d", len(s), n)
@@ -383,6 +366,65 @@ func TestMaximum(t *testing.T) {
 	if maximum := tree.Maximum(); maximum != "4" {
 		t.Fatal(maximum)
 	}
+}
+
+func slice[K constraints.Ordered, V any](root NodeDescriptor[K, V]) []KeyValue[K, V] {
+	if root == nil || root.Read() == nil {
+		return nil
+	}
+
+	if root.Read().Leaf() {
+		return root.Read().Values
+	}
+
+	var s []KeyValue[K, V]
+
+	for _, child := range root.Read().Children {
+		s = append(s, slice(child)...)
+	}
+
+	return s
+}
+
+func TestSlice(t *testing.T) {
+	test := func(order int, n int, delete []int) {
+
+		tree := New[int, string](order)
+
+		for i := 0; i < n; i++ {
+			tree.Insert(i, fmt.Sprint(i))
+		}
+
+		master := slices.Collect(Range_(0, n))
+		d := 0
+
+		for _, k := range delete {
+			tree.Delete(k)
+			master = slices.Delete(master, k-d, k-d+1)
+			d++
+		}
+
+		s := Slice(tree.Root)
+
+		if slices.CompareFunc(s, master, func(kv KeyValue[int, string], x int) int {
+			return cmp.Compare(kv.Key, x)
+		}) != 0 {
+			t.Fatalf("%v, %v", s, master)
+		}
+
+		v := slice(tree.Root)
+
+		if slices.CompareFunc(v, master, func(kv KeyValue[int, string], x int) int {
+			return cmp.Compare(kv.Key, x)
+		}) != 0 {
+			t.Fatalf("%v, %v", v, master)
+		}
+	}
+
+	test(3, 8, []int{4})
+	test(3, 600, []int{100, 560})
+	test(10, 1000, []int{50, 100, 560})
+	test(15, 10000, []int{1, 999})
 }
 
 // TODO: move to a different pacakge

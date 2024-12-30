@@ -244,6 +244,24 @@ func (t *Instance[K, V]) Maximum() V {
 	panic("bp3: empty tree")
 }
 
+func Slice[K constraints.Ordered, V any](root NodeDescriptor[K, V]) []KeyValue[K, V] {
+	var s []KeyValue[K, V]
+
+	node := minimum(root)
+
+	for node != nil && node.Read() != nil {
+
+		if !node.Read().Leaf() {
+			panic("!")
+		}
+
+		s = append(s, node.Read().Values...)
+		node = node.Read().Next
+	}
+
+	return s
+}
+
 func (t *Instance[K, V]) insert(root NodeDescriptor[K, V], minimum K, item KeyValue[K, V]) (NodeDescriptor[K, V], K, NodeDescriptor[K, V], K) {
 
 	if root == nil || root.Read() == nil {
@@ -455,7 +473,7 @@ func (t *Instance[K, V]) delete(root NodeDescriptor[K, V], key K, minimum K) (V,
 
 		if parent.Read().Prev != nil && parent.Read().Next != nil {
 			// middle
-			parent.Write().Prev, parent.Read().Next.Write().Prev = parent.Read().Next, parent.Read().Prev
+			parent.Read().Prev.Write().Next, parent.Read().Next.Write().Prev = parent.Read().Next, parent.Read().Prev
 		} else if parent.Read().Prev != nil {
 			// last
 			parent.Read().Prev.Write().Next = nil
