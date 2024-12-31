@@ -24,6 +24,8 @@ func main() {
     tree.Insert(1, "one")
     tree.Insert(2, "two")
     tree.Insert(3, "three")
+    tree.Insert(4, "four")
+    tree.Insert(5, "five")
 
     // Search for elements
     value, found := tree.Find(2)
@@ -46,6 +48,11 @@ func main() {
         fmt.Println("The tree is empty")
     } else {
         fmt.Println("The tree is not empty")
+    }
+
+    // Iterate elements
+    for k, v := range tree.RangeClosed(2, 4) {
+        fmt.Println("%d=%s", k, v)
     }
 }
 ```
