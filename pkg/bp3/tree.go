@@ -2,12 +2,15 @@ package bp3
 
 import (
 	"cmp"
-	"fmt"
 	"iter"
 	"math"
 	"slices"
 
 	"golang.org/x/exp/constraints"
+)
+
+const (
+	MinOrder = 3
 )
 
 // Instance represents a b+tree instance structure that contains a root node descriptor,
@@ -21,17 +24,7 @@ type Instance[K constraints.Ordered, V any] struct {
 	Builder NodeBuilder[K, V]    // Builder is used to create new nodes within the instance.
 }
 
-// New creates a new instance of b+tree structure with the specified order.
-// The function ensures that the order is at least 3, and if it is not, it will panic
-// with an appropriate error message.
-func New[K constraints.Ordered, V any](order int) *Instance[K, V] {
-	if order < 3 {
-		panic(fmt.Sprintf("bp3: invalid tree order (%d)", order))
-	}
-
-	return &Instance[K, V]{Order: order, Builder: &defaultBuilder[K, V]{}}
-}
-
+// Insert adds a key-value pair to the B+ Tree.
 func (t *Instance[K, V]) Insert(key K, value V) {
 	kv := KeyValue[K, V]{Key: key, Value: value}
 	child, minimum, brother, brotherMin := t.insert(t.Root, t.Min, kv)
@@ -48,6 +41,8 @@ func (t *Instance[K, V]) Insert(key K, value V) {
 	t.Size++
 }
 
+// Find retrieves the value associated with the given key from the B+ Tree,
+// returning the value and a boolean indicating success.
 func (t *Instance[K, V]) Find(key K) (V, bool) {
 	if node, i, found := find(t.Root, key); found {
 		return node.Read().Values[i].Value, true
@@ -244,6 +239,9 @@ func (t *Instance[K, V]) Maximum() V {
 	panic("bp3: empty tree")
 }
 
+// Slice traverses the nodes starting from the given root NodeDescriptor
+// collects all the key-value pairs from the leaf nodes, and returns them as a slice.
+// It iterates through the nodes in ascending order based on the keys.
 func Slice[K constraints.Ordered, V any](root NodeDescriptor[K, V]) []KeyValue[K, V] {
 	var s []KeyValue[K, V]
 

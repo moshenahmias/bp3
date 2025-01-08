@@ -1,4 +1,4 @@
-package bp3
+package bp3_test
 
 import (
 	"cmp"
@@ -7,12 +7,13 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/moshenahmias/bp3/pkg/bp3"
 	"golang.org/x/exp/constraints"
 )
 
 func TestInsert(t *testing.T) {
 	test := func(order int, n int) {
-		tree := New[int, string](order)
+		tree := bp3.New[int, string](order)
 
 		for i := 0; i < n; i++ {
 			tree.Insert(i, fmt.Sprint(i))
@@ -22,7 +23,7 @@ func TestInsert(t *testing.T) {
 			t.Fatalf("size %d != %d", size, n)
 		}
 
-		s := Slice(tree.Root)
+		s := bp3.Slice(tree.Root)
 
 		if len(s) != n {
 			t.Fatalf("slice size %d != %d", len(s), n)
@@ -47,7 +48,7 @@ func TestInsert(t *testing.T) {
 
 func TestDelete(t *testing.T) {
 	test := func(order int, n int, del map[int]bool) {
-		tree := New[int, string](order)
+		tree := bp3.New[int, string](order)
 
 		for i := 0; i < n; i++ {
 			if delete, found := del[i]; !found || delete {
@@ -95,7 +96,7 @@ func TestDelete(t *testing.T) {
 
 func TestRangeClosed(t *testing.T) {
 	test := func(order int, n int, from, to int) {
-		tree := New[int, string](order)
+		tree := bp3.New[int, string](order)
 
 		for i := 0; i < n; i++ {
 			tree.Insert(i, fmt.Sprint(i))
@@ -116,7 +117,7 @@ func TestRangeClosed(t *testing.T) {
 
 func TestRangeOpened(t *testing.T) {
 	test := func(order int, n int, from, to int) {
-		tree := New[int, string](order)
+		tree := bp3.New[int, string](order)
 
 		for i := 0; i < n; i++ {
 			tree.Insert(i, fmt.Sprint(i))
@@ -137,7 +138,7 @@ func TestRangeOpened(t *testing.T) {
 
 func TestRangeLowHalfOpened(t *testing.T) {
 	test := func(order int, n int, from, to int) {
-		tree := New[int, string](order)
+		tree := bp3.New[int, string](order)
 
 		for i := 0; i < n; i++ {
 			tree.Insert(i, fmt.Sprint(i))
@@ -158,7 +159,7 @@ func TestRangeLowHalfOpened(t *testing.T) {
 
 func TestRangeHighHalfOpened(t *testing.T) {
 	test := func(order int, n int, from, to int) {
-		tree := New[int, string](order)
+		tree := bp3.New[int, string](order)
 
 		for i := 0; i < n; i++ {
 			tree.Insert(i, fmt.Sprint(i))
@@ -178,7 +179,7 @@ func TestRangeHighHalfOpened(t *testing.T) {
 }
 
 func TestRangeMissingLeft(t *testing.T) {
-	tree := New[int, string](3)
+	tree := bp3.New[int, string](3)
 
 	for i := 20; i < 50; i++ {
 		tree.Insert(i, fmt.Sprint(i))
@@ -193,7 +194,7 @@ func TestRangeMissingLeft(t *testing.T) {
 }
 
 func TestRangeMissingRight(t *testing.T) {
-	tree := New[int, string](3)
+	tree := bp3.New[int, string](3)
 
 	for i := 20; i < 50; i++ {
 		tree.Insert(i, fmt.Sprint(i))
@@ -208,7 +209,7 @@ func TestRangeMissingRight(t *testing.T) {
 }
 
 func TestRangeMissingLeftRight(t *testing.T) {
-	tree := New[int, string](3)
+	tree := bp3.New[int, string](3)
 
 	for i := 20; i < 50; i++ {
 		tree.Insert(i, fmt.Sprint(i))
@@ -223,7 +224,7 @@ func TestRangeMissingLeftRight(t *testing.T) {
 }
 
 func TestRangeMissingMiddle(t *testing.T) {
-	tree := New[int, string](3)
+	tree := bp3.New[int, string](3)
 
 	for i := 20; i < 30; i++ {
 		tree.Insert(i, fmt.Sprint(i))
@@ -242,7 +243,7 @@ func TestRangeMissingMiddle(t *testing.T) {
 }
 
 func TestDeleteRange(t *testing.T) {
-	tree := New[int, string](3)
+	tree := bp3.New[int, string](3)
 
 	for i := 0; i < 5; i++ {
 		tree.Insert(i, fmt.Sprint(i))
@@ -262,7 +263,7 @@ func TestDeleteRange(t *testing.T) {
 
 func TestFromClosed(t *testing.T) {
 	test := func(order int, n int, from int) {
-		tree := New[int, string](order)
+		tree := bp3.New[int, string](order)
 
 		for i := 0; i < n; i++ {
 			tree.Insert(i, fmt.Sprint(i))
@@ -283,7 +284,7 @@ func TestFromClosed(t *testing.T) {
 
 func TestFromOpened(t *testing.T) {
 	test := func(order int, n int, from int) {
-		tree := New[int, string](order)
+		tree := bp3.New[int, string](order)
 
 		for i := 0; i < n; i++ {
 			tree.Insert(i, fmt.Sprint(i))
@@ -304,7 +305,7 @@ func TestFromOpened(t *testing.T) {
 
 func TestToClosed(t *testing.T) {
 	test := func(order int, n int, to int) {
-		tree := New[int, string](order)
+		tree := bp3.New[int, string](order)
 
 		for i := 0; i < n; i++ {
 			tree.Insert(i, fmt.Sprint(i))
@@ -325,7 +326,7 @@ func TestToClosed(t *testing.T) {
 
 func TestToOpened(t *testing.T) {
 	test := func(order int, n int, to int) {
-		tree := New[int, string](order)
+		tree := bp3.New[int, string](order)
 
 		for i := 0; i < n; i++ {
 			tree.Insert(i, fmt.Sprint(i))
@@ -345,7 +346,7 @@ func TestToOpened(t *testing.T) {
 }
 
 func TestMinimum(t *testing.T) {
-	tree := New[int, string](3)
+	tree := bp3.New[int, string](3)
 
 	for i := 0; i < 5; i++ {
 		tree.Insert(i, fmt.Sprint(i))
@@ -357,7 +358,7 @@ func TestMinimum(t *testing.T) {
 }
 
 func TestMaximum(t *testing.T) {
-	tree := New[int, string](3)
+	tree := bp3.New[int, string](3)
 
 	for i := 0; i < 5; i++ {
 		tree.Insert(i, fmt.Sprint(i))
@@ -368,7 +369,7 @@ func TestMaximum(t *testing.T) {
 	}
 }
 
-func slice[K constraints.Ordered, V any](root NodeDescriptor[K, V]) []KeyValue[K, V] {
+func slice[K constraints.Ordered, V any](root bp3.NodeDescriptor[K, V]) []bp3.KeyValue[K, V] {
 	if root == nil || root.Read() == nil {
 		return nil
 	}
@@ -377,7 +378,7 @@ func slice[K constraints.Ordered, V any](root NodeDescriptor[K, V]) []KeyValue[K
 		return root.Read().Values
 	}
 
-	var s []KeyValue[K, V]
+	var s []bp3.KeyValue[K, V]
 
 	for _, child := range root.Read().Children {
 		s = append(s, slice(child)...)
@@ -389,7 +390,7 @@ func slice[K constraints.Ordered, V any](root NodeDescriptor[K, V]) []KeyValue[K
 func TestSlice(t *testing.T) {
 	test := func(order int, n int, delete []int) {
 
-		tree := New[int, string](order)
+		tree := bp3.New[int, string](order)
 
 		for i := 0; i < n; i++ {
 			tree.Insert(i, fmt.Sprint(i))
@@ -404,9 +405,9 @@ func TestSlice(t *testing.T) {
 			d++
 		}
 
-		s := Slice(tree.Root)
+		s := bp3.Slice(tree.Root)
 
-		if slices.CompareFunc(s, master, func(kv KeyValue[int, string], x int) int {
+		if slices.CompareFunc(s, master, func(kv bp3.KeyValue[int, string], x int) int {
 			return cmp.Compare(kv.Key, x)
 		}) != 0 {
 			t.Fatalf("%v, %v", s, master)
@@ -414,7 +415,7 @@ func TestSlice(t *testing.T) {
 
 		v := slice(tree.Root)
 
-		if slices.CompareFunc(v, master, func(kv KeyValue[int, string], x int) int {
+		if slices.CompareFunc(v, master, func(kv bp3.KeyValue[int, string], x int) int {
 			return cmp.Compare(kv.Key, x)
 		}) != 0 {
 			t.Fatalf("%v, %v", v, master)

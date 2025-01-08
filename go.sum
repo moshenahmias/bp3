@@ -1,6 +1,12 @@
+github.com/golanguzb70/lrucache v1.2.0 h1:VjpjmB4VTf9VXBtZTJGcgcN0CNFM5egDrrSjkGyQOlg=
+github.com/golanguzb70/lrucache v1.2.0/go.mod h1:zc2GD26KwGEDdTHsCCTcJorv/11HyKwQVS9gqg2bizc=
 github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
 github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/julien040/go-ternary v1.0.1 h1:xWv3jYtdpdFZFbdfpU8Jn0m0z1l7Ai8yVa1Iy8jCYdw=
 github.com/julien040/go-ternary v1.0.1/go.mod h1:XXIcjDHL7vyuHA7V0UwaTKMscsqKzFkE9FTGbBeqJHM=
+github.com/spf13/afero v1.11.0 h1:WJQKhtpdm3v2IzqG8VMqrr6Rf3UYpEF239Jy9wNepM8=
+github.com/spf13/afero v1.11.0/go.mod h1:GH9Y3pIexgf1MTIWtNGyogA5MwRIDXGUr+hbWNoBjkY=
 golang.org/x/exp v0.0.0-20241108190413-2d47ceb2692f h1:XdNn9LlyWAhLVp6P/i8QYBW+hlyhrhei9uErw2B5GJo=
 golang.org/x/exp v0.0.0-20241108190413-2d47ceb2692f/go.mod h1:D5SMRVC3C2/4+F/DB1wZsLRnSNimn2Sp/NPsCrsv8ak=
+golang.org/x/text v0.14.0 h1:ScX5w1eTa3QqT8oi6+ziP7dTV1S2+ALU0bI+0zXKWiQ=
+golang.org/x/text v0.14.0/go.mod h1:18ZOQIKpY8NJVqYksKHtTdi31H5itFRjB5/qKTNYzSU=
