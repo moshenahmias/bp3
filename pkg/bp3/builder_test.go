@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/moshenahmias/bp3"
+	"github.com/moshenahmias/bp3/pkg/bp3"
 	"golang.org/x/exp/constraints"
 )
 
@@ -20,7 +20,9 @@ type testNodeDescriptor[K constraints.Ordered, V any] struct {
 
 func (d *testNodeDescriptor[K, V]) Read() *bp3.Node[K, V] {
 	if d.node == nil {
-		d.loader.Load(d)
+		if err := d.loader.Load(d); err != nil {
+			panic(fmt.Sprintf("bp3: %v", err))
+		}
 	}
 
 	return d.node
@@ -46,7 +48,7 @@ type testNodeBuilder[K constraints.Ordered, V any] struct {
 	delete []string
 }
 
-func (b *testNodeBuilder[K, V]) Load(d bp3.NodeDescriptor[K, V]) {
+func (b *testNodeBuilder[K, V]) Load(d bp3.NodeDescriptor[K, V]) error {
 	td := d.(*testNodeDescriptor[K, V])
 	saved := b.disk[td.id]
 
@@ -79,6 +81,8 @@ func (b *testNodeBuilder[K, V]) Load(d bp3.NodeDescriptor[K, V]) {
 		Next:     next,
 		Prev:     prev,
 	}
+
+	return nil
 }
 
 func (b *testNodeBuilder[K, V]) Create(node *bp3.Node[K, V]) bp3.NodeDescriptor[K, V] {
@@ -99,7 +103,7 @@ func (b *testNodeBuilder[K, V]) Update(d bp3.NodeDescriptor[K, V]) {
 	b.update[td.id] = td.node
 }
 
-func (b *testNodeBuilder[K, V]) Flush() {
+func (b *testNodeBuilder[K, V]) Flush() error {
 	if len(b.delete) > 0 {
 		for _, id := range b.delete {
 			delete(b.disk, id)
@@ -141,6 +145,8 @@ func (b *testNodeBuilder[K, V]) Flush() {
 
 	b.delete = nil
 	clear(b.update)
+
+	return nil
 }
 
 func (b *testNodeBuilder[K, V]) Delete(d bp3.NodeDescriptor[K, V]) {
