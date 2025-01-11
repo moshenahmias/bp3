@@ -16,7 +16,7 @@ import (
 
 func main() {
     // Create a new B+Tree instance of order 3
-    tree := bp3.New[int, string](3)
+    tree := bp3.New[int, string](bp3.WithOrder(3))
 
     // Insert elements
     tree.Insert(1, "one")
@@ -61,60 +61,78 @@ And with disk persistency support:
 package main
 
 import (
-    "fmt"
-    "os"
-    "github.com/moshenahmias/bp3/pkg/bp3store"
+	"fmt"
+	"os"
+
+	bp3disk "github.com/moshenahmias/bp3/pkg/disk"
 )
 
 func main() {
-    // Create or open files for store and page
-    store, err := os.OpenFile("store.db", os.O_RDWR|os.O_CREATE, 0666)
-    if err != nil {
-        fmt.Println("Error opening store file:", err)
-        return
-    }
-    defer store.Close()
+	// Create or open files for store and page
+	store, err := os.OpenFile("store.db", os.O_RDWR|os.O_CREATE, 0666)
+	if err != nil {
+		fmt.Println("Error opening store file:", err)
+		return
+	}
+	defer store.Close()
 
-    page, err := os.OpenFile("page.db", os.O_RDWR|os.O_CREATE, 0666)
-    if err != nil {
-        fmt.Println("Error opening page file:", err)
-        return
-    }
-    defer page.Close()
+	var pages []bp3disk.ReadWriteSeekSyncTruncater
 
-    // Initialize a new B+ Tree instance
-    tree, err := bp3store.Initialize[int, string](3, store, page)
-    if err != nil {
-        fmt.Println("Error initializing B+ Tree:", err)
-        return
-    }
+	for i := 0; i < 10; i++ {
+		page, err := os.OpenFile(fmt.Sprintf("page_%d.db", i), os.O_RDWR|os.O_CREATE, 0666)
+		if err != nil {
+			fmt.Println("Error opening page file:", err)
+			return
+		}
 
-    // Insert some key-value pairs
-    tree.Insert(1, "value1")
-    tree.Insert(2, "value2")
+		pages = append(pages, page)
 
-    // Flush the tree to the storage
-    if err := bp3store.Flush(tree); err != nil {
-        fmt.Println("Error flushing B+ Tree:", err)
-        return
-    }
+		defer page.Close()
+	}
 
-    // Load the B+ Tree from the storage
-    loadedTree, err := bp3store.Load[int, string](store, page)
-    if err != nil {
-        fmt.Println("Error loading B+ Tree:", err)
-        return
-    }
+	// Initialize a new B+ Tree instance
+	tree, err := bp3disk.Initialize[int, string](
+		store,
+		pages[0],
+		bp3disk.WithIndexPages(pages[1:]),
+	)
 
-    // Find a value in the loaded tree
-    value, found := loadedTree.Find(1)
-    if found {
-        fmt.Println("Found value:", value)
-    } else {
-        fmt.Println("Value not found")
-    }
+	if err != nil {
+		fmt.Println("Error initializing B+ Tree:", err)
+		return
+	}
+
+	for i := 0; i < 1000000; i++ {
+		// Insert some key-value pairs
+		tree.Insert(i, fmt.Sprintf("value_%d", i))
+	}
+
+	// Flush the tree to the storage
+	if err := bp3disk.Flush(tree); err != nil {
+		fmt.Println("Error flushing B+ Tree:", err)
+		return
+	}
+
+	// Load the B+ Tree from the storage
+	loadedTree, err := bp3disk.Load[int, string](
+		store,
+		pages[0],
+		bp3disk.WithIndexPages(pages[1:]),
+	)
+
+	if err != nil {
+		fmt.Println("Error loading B+ Tree:", err)
+		return
+	}
+
+	// Find a value in the loaded tree
+	value, found := loadedTree.Find(100)
+	if found {
+		fmt.Println("Found value:", value)
+	} else {
+		fmt.Println("Value not found")
+	}
 }
-
 ```
 
 ## Installation

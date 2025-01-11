@@ -1,4 +1,4 @@
-package bp3store_test
+package disk_test
 
 import (
 	"cmp"
@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/moshenahmias/bp3/pkg/bp3"
-	"github.com/moshenahmias/bp3/pkg/bp3store"
+	"github.com/moshenahmias/bp3/pkg/disk"
 	"github.com/spf13/afero"
 )
 
@@ -24,7 +24,7 @@ func TestTreeInsertSync(t *testing.T) {
 
 		defer file.Close()
 
-		var pages []bp3store.ReadWriteSeekSyncTruncater
+		var pages []disk.ReadWriteSeekSyncTruncater
 
 		for i := 0; i < p; i++ {
 			if pf, err := fs.Create(fmt.Sprintf("page_%d", i)); err == nil {
@@ -35,7 +35,12 @@ func TestTreeInsertSync(t *testing.T) {
 			}
 		}
 
-		tree, err := bp3store.Initialize[int, string](order, file, pages[0], pages[1:]...)
+		tree, err := disk.Initialize[int, string](
+			file,
+			pages[0],
+			disk.WithOrder(order),
+			disk.WithIndexPages(pages[1:]),
+		)
 
 		if err != nil {
 			t.Fatal(err)
@@ -45,7 +50,7 @@ func TestTreeInsertSync(t *testing.T) {
 			tree.Insert(i, fmt.Sprint(i))
 		}
 
-		if err := bp3store.Flush(tree); err != nil {
+		if err := disk.Flush(tree); err != nil {
 			t.Fatal(err)
 		}
 
@@ -55,7 +60,12 @@ func TestTreeInsertSync(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		loaded, err := bp3store.Load[int, string](file, pages[0], pages[1:]...)
+		loaded, err := disk.Load[int, string](
+			file,
+			pages[0],
+			disk.WithOrder(order),
+			disk.WithIndexPages(pages[1:]),
+		)
 
 		if err != nil {
 			t.Fatal(err)
@@ -88,7 +98,7 @@ func TestTreeInserDeleteSync(t *testing.T) {
 
 		defer file.Close()
 
-		var pages []bp3store.ReadWriteSeekSyncTruncater
+		var pages []disk.ReadWriteSeekSyncTruncater
 
 		for i := 0; i < p; i++ {
 			if pf, err := fs.Create(fmt.Sprintf("page_%d", i)); err == nil {
@@ -99,7 +109,12 @@ func TestTreeInserDeleteSync(t *testing.T) {
 			}
 		}
 
-		tree, err := bp3store.Initialize[int, string](order, file, pages[0], pages[1:]...)
+		tree, err := disk.Initialize[int, string](
+			file,
+			pages[0],
+			disk.WithOrder(order),
+			disk.WithIndexPages(pages[1:]),
+		)
 
 		if err != nil {
 			t.Fatal(err)
@@ -113,7 +128,7 @@ func TestTreeInserDeleteSync(t *testing.T) {
 		tree.Delete(10)
 		tree.Delete(20)
 
-		if err := bp3store.Flush(tree); err != nil {
+		if err := disk.Flush(tree); err != nil {
 			t.Fatal(err)
 		}
 
@@ -123,7 +138,12 @@ func TestTreeInserDeleteSync(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		loaded, err := bp3store.Load[int, string](file, pages[0], pages[1:]...)
+		loaded, err := disk.Load[int, string](
+			file,
+			pages[0],
+			disk.WithOrder(order),
+			disk.WithIndexPages(pages[1:]),
+		)
 
 		if err != nil {
 			t.Fatal(err)

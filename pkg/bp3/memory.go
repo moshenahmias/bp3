@@ -30,7 +30,20 @@ func (*memoryBuilder[K, V]) Flush() error {
 	return nil
 }
 
-// New creates a new instance of b+tree structure with the specified order.
-func New[K constraints.Ordered, V any](order int) *Instance[K, V] {
-	return &Instance[K, V]{Order: max(order, MinOrder), Builder: &memoryBuilder[K, V]{}}
+// New creates a new instance of b+tree structure with the specified options.
+func New[K constraints.Ordered, V any](options ...Option) *Instance[K, V] {
+	opts := buildOptions(options...)
+	order := max(opts.order, MinOrder)
+	return &Instance[K, V]{Order: order, Builder: &memoryBuilder[K, V]{}}
+}
+
+// Clear removes all key-value pairs from the B+ Tree, resetting its state.
+func Clear[K constraints.Ordered, V any](tree *Instance[K, V]) {
+	if _, ok := tree.Builder.(*memoryBuilder[K, V]); !ok {
+		panic("bp3: invalid tree instance")
+	}
+
+	tree.Root = nil
+	tree.Min = *new(K)
+	tree.Size = 0
 }

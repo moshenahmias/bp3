@@ -13,7 +13,7 @@ import (
 
 func TestInsert(t *testing.T) {
 	test := func(order int, n int) {
-		tree := bp3.New[int, string](order)
+		tree := bp3.New[int, string](bp3.WithOrder(order))
 
 		for i := 0; i < n; i++ {
 			tree.Insert(i, fmt.Sprint(i))
@@ -48,7 +48,7 @@ func TestInsert(t *testing.T) {
 
 func TestDelete(t *testing.T) {
 	test := func(order int, n int, del map[int]bool) {
-		tree := bp3.New[int, string](order)
+		tree := bp3.New[int, string](bp3.WithOrder(order))
 
 		for i := 0; i < n; i++ {
 			if delete, found := del[i]; !found || delete {
@@ -96,7 +96,7 @@ func TestDelete(t *testing.T) {
 
 func TestRangeClosed(t *testing.T) {
 	test := func(order int, n int, from, to int) {
-		tree := bp3.New[int, string](order)
+		tree := bp3.New[int, string](bp3.WithOrder(order))
 
 		for i := 0; i < n; i++ {
 			tree.Insert(i, fmt.Sprint(i))
@@ -117,7 +117,7 @@ func TestRangeClosed(t *testing.T) {
 
 func TestRangeOpened(t *testing.T) {
 	test := func(order int, n int, from, to int) {
-		tree := bp3.New[int, string](order)
+		tree := bp3.New[int, string](bp3.WithOrder(order))
 
 		for i := 0; i < n; i++ {
 			tree.Insert(i, fmt.Sprint(i))
@@ -138,7 +138,7 @@ func TestRangeOpened(t *testing.T) {
 
 func TestRangeLowHalfOpened(t *testing.T) {
 	test := func(order int, n int, from, to int) {
-		tree := bp3.New[int, string](order)
+		tree := bp3.New[int, string](bp3.WithOrder(order))
 
 		for i := 0; i < n; i++ {
 			tree.Insert(i, fmt.Sprint(i))
@@ -159,7 +159,7 @@ func TestRangeLowHalfOpened(t *testing.T) {
 
 func TestRangeHighHalfOpened(t *testing.T) {
 	test := func(order int, n int, from, to int) {
-		tree := bp3.New[int, string](order)
+		tree := bp3.New[int, string](bp3.WithOrder(order))
 
 		for i := 0; i < n; i++ {
 			tree.Insert(i, fmt.Sprint(i))
@@ -179,7 +179,7 @@ func TestRangeHighHalfOpened(t *testing.T) {
 }
 
 func TestRangeMissingLeft(t *testing.T) {
-	tree := bp3.New[int, string](3)
+	tree := bp3.New[int, string](bp3.WithOrder(3))
 
 	for i := 20; i < 50; i++ {
 		tree.Insert(i, fmt.Sprint(i))
@@ -194,7 +194,7 @@ func TestRangeMissingLeft(t *testing.T) {
 }
 
 func TestRangeMissingRight(t *testing.T) {
-	tree := bp3.New[int, string](3)
+	tree := bp3.New[int, string](bp3.WithOrder(3))
 
 	for i := 20; i < 50; i++ {
 		tree.Insert(i, fmt.Sprint(i))
@@ -209,7 +209,7 @@ func TestRangeMissingRight(t *testing.T) {
 }
 
 func TestRangeMissingLeftRight(t *testing.T) {
-	tree := bp3.New[int, string](3)
+	tree := bp3.New[int, string](bp3.WithOrder(3))
 
 	for i := 20; i < 50; i++ {
 		tree.Insert(i, fmt.Sprint(i))
@@ -224,7 +224,7 @@ func TestRangeMissingLeftRight(t *testing.T) {
 }
 
 func TestRangeMissingMiddle(t *testing.T) {
-	tree := bp3.New[int, string](3)
+	tree := bp3.New[int, string](bp3.WithOrder(3))
 
 	for i := 20; i < 30; i++ {
 		tree.Insert(i, fmt.Sprint(i))
@@ -243,7 +243,7 @@ func TestRangeMissingMiddle(t *testing.T) {
 }
 
 func TestDeleteRange(t *testing.T) {
-	tree := bp3.New[int, string](3)
+	tree := bp3.New[int, string](bp3.WithOrder(3))
 
 	for i := 0; i < 5; i++ {
 		tree.Insert(i, fmt.Sprint(i))
@@ -263,7 +263,7 @@ func TestDeleteRange(t *testing.T) {
 
 func TestFromClosed(t *testing.T) {
 	test := func(order int, n int, from int) {
-		tree := bp3.New[int, string](order)
+		tree := bp3.New[int, string](bp3.WithOrder(order))
 
 		for i := 0; i < n; i++ {
 			tree.Insert(i, fmt.Sprint(i))
@@ -284,7 +284,7 @@ func TestFromClosed(t *testing.T) {
 
 func TestFromOpened(t *testing.T) {
 	test := func(order int, n int, from int) {
-		tree := bp3.New[int, string](order)
+		tree := bp3.New[int, string](bp3.WithOrder(order))
 
 		for i := 0; i < n; i++ {
 			tree.Insert(i, fmt.Sprint(i))
@@ -305,7 +305,7 @@ func TestFromOpened(t *testing.T) {
 
 func TestToClosed(t *testing.T) {
 	test := func(order int, n int, to int) {
-		tree := bp3.New[int, string](order)
+		tree := bp3.New[int, string](bp3.WithOrder(order))
 
 		for i := 0; i < n; i++ {
 			tree.Insert(i, fmt.Sprint(i))
@@ -326,7 +326,7 @@ func TestToClosed(t *testing.T) {
 
 func TestToOpened(t *testing.T) {
 	test := func(order int, n int, to int) {
-		tree := bp3.New[int, string](order)
+		tree := bp3.New[int, string](bp3.WithOrder(order))
 
 		for i := 0; i < n; i++ {
 			tree.Insert(i, fmt.Sprint(i))
@@ -346,7 +346,7 @@ func TestToOpened(t *testing.T) {
 }
 
 func TestMinimum(t *testing.T) {
-	tree := bp3.New[int, string](3)
+	tree := bp3.New[int, string](bp3.WithOrder(3))
 
 	for i := 0; i < 5; i++ {
 		tree.Insert(i, fmt.Sprint(i))
@@ -358,7 +358,7 @@ func TestMinimum(t *testing.T) {
 }
 
 func TestMaximum(t *testing.T) {
-	tree := bp3.New[int, string](3)
+	tree := bp3.New[int, string](bp3.WithOrder(3))
 
 	for i := 0; i < 5; i++ {
 		tree.Insert(i, fmt.Sprint(i))
@@ -390,7 +390,7 @@ func slice[K constraints.Ordered, V any](root bp3.NodeDescriptor[K, V]) []bp3.Ke
 func TestSlice(t *testing.T) {
 	test := func(order int, n int, delete []int) {
 
-		tree := bp3.New[int, string](order)
+		tree := bp3.New[int, string](bp3.WithOrder(order))
 
 		for i := 0; i < n; i++ {
 			tree.Insert(i, fmt.Sprint(i))
@@ -426,6 +426,24 @@ func TestSlice(t *testing.T) {
 	test(3, 600, []int{100, 560})
 	test(10, 1000, []int{50, 100, 560})
 	test(15, 10000, []int{1, 999})
+}
+
+func TestClear(t *testing.T) {
+	tree := bp3.New[int, string](bp3.WithOrder(3))
+
+	for i := 0; i < 100; i++ {
+		tree.Insert(i, fmt.Sprint(i))
+	}
+
+	if tree.Empty() {
+		t.Fatalf("tree should not be empty")
+	}
+
+	bp3.Clear(tree)
+
+	if !tree.Empty() {
+		t.Fatalf("tree should be empty")
+	}
 }
 
 // TODO: move to a different pacakge

@@ -1,4 +1,4 @@
-package bp3store
+package disk
 
 import (
 	"bytes"
@@ -18,7 +18,7 @@ type ReadWriteSeekSyncer interface {
 }
 
 type nodeDescriptor[K constraints.Ordered, V any] struct {
-	id      string
+	id      uuid.UUID
 	offset  int64
 	size    int64 // on store
 	node    *bp3.Node[K, V]
@@ -29,7 +29,7 @@ type nodeDescriptor[K constraints.Ordered, V any] struct {
 func (d *nodeDescriptor[K, V]) Read() *bp3.Node[K, V] {
 	if d.node == nil {
 		if err := d.loader.Load(d); err != nil {
-			panic(fmt.Sprintf("bp3store: %v", err))
+			panic(fmt.Sprintf("disk: %v", err))
 		}
 	}
 
@@ -43,17 +43,17 @@ func (d *nodeDescriptor[K, V]) Write() *bp3.Node[K, V] {
 }
 
 type nodeRecord[K constraints.Ordered, V any] struct {
-	Id       string
+	Id       uuid.UUID
 	Mins     []K
-	Children []string
+	Children []uuid.UUID
 	Values   []bp3.KeyValue[K, V]
-	Next     string
-	Prev     string
+	Next     uuid.UUID
+	Prev     uuid.UUID
 }
 
 type nodeBuilder[K constraints.Ordered, V any] struct {
-	update map[string]*nodeDescriptor[K, V]
-	delete map[string]*nodeDescriptor[K, V]
+	update map[uuid.UUID]*nodeDescriptor[K, V]
+	delete map[uuid.UUID]*nodeDescriptor[K, V]
 	store  ReadWriteSeekSyncer
 	index  mapper
 }
@@ -100,13 +100,13 @@ func (b *nodeBuilder[K, V]) Load(d bp3.NodeDescriptor[K, V]) error {
 
 	var next bp3.NodeDescriptor[K, V]
 
-	if len(record.Next) > 0 {
+	if record.Next != uuid.Nil {
 		next = &nodeDescriptor[K, V]{id: record.Next, builder: desc.builder, loader: desc.loader}
 	}
 
 	var prev bp3.NodeDescriptor[K, V]
 
-	if len(record.Prev) > 0 {
+	if record.Prev != uuid.Nil {
 		prev = &nodeDescriptor[K, V]{id: record.Prev, builder: desc.builder, loader: desc.loader}
 	}
 
@@ -123,7 +123,7 @@ func (b *nodeBuilder[K, V]) Load(d bp3.NodeDescriptor[K, V]) error {
 
 func (b *nodeBuilder[K, V]) Create(node *bp3.Node[K, V]) bp3.NodeDescriptor[K, V] {
 	d := &nodeDescriptor[K, V]{
-		id:      uuid.NewString(),
+		id:      uuid.New(),
 		node:    node,
 		builder: b,
 		loader:  b,
@@ -147,10 +147,10 @@ func (b *nodeBuilder[K, V]) Flush() error {
 	clear(b.delete)
 
 	for _, dd := range b.update {
-		var children []string
+		var children []uuid.UUID
 
 		if len(dd.node.Children) > 0 {
-			children = make([]string, 0, len(dd.node.Children))
+			children = make([]uuid.UUID, 0, len(dd.node.Children))
 
 			for _, d := range dd.node.Children {
 				childDesc := d.(*nodeDescriptor[K, V])
@@ -158,14 +158,14 @@ func (b *nodeBuilder[K, V]) Flush() error {
 			}
 		}
 
-		var next string
+		var next uuid.UUID
 
 		if dd.node.Next != nil {
 			nextDesc := dd.node.Next.(*nodeDescriptor[K, V])
 			next = nextDesc.id
 		}
 
-		var prev string
+		var prev uuid.UUID
 
 		if dd.node.Prev != nil {
 			prevDesc := dd.node.Prev.(*nodeDescriptor[K, V])
@@ -235,15 +235,16 @@ func (b *nodeBuilder[K, V]) Delete(d bp3.NodeDescriptor[K, V]) {
 }
 
 type treeRecord[K constraints.Ordered, V any] struct {
-	Root  string
+	Root  uuid.UUID
 	Min   K
 	Order int
 	Size  int
 }
 
-// Initialize sets up a new B+ Tree instance with the given order, where to store the tree and index page/s.
-func Initialize[K constraints.Ordered, V any](order int, store ReadWriteSeekSyncer, page ReadWriteSeekSyncTruncater, rest ...ReadWriteSeekSyncTruncater) (*bp3.Instance[K, V], error) {
-	order = max(order, bp3.MinOrder)
+// Initialize sets up a new B+ Tree instance with the given store, index, and optionals.
+func Initialize[K constraints.Ordered, V any](store ReadWriteSeekSyncer, index ReadWriteSeekSyncTruncater, options ...Option) (*bp3.Instance[K, V], error) {
+	opts := buildOptions(options...)
+	order := max(opts.order, bp3.MinOrder)
 
 	record := treeRecord[K, V]{
 		Order: order,
@@ -255,14 +256,16 @@ func Initialize[K constraints.Ordered, V any](order int, store ReadWriteSeekSync
 
 	return &bp3.Instance[K, V]{Order: order, Builder: &nodeBuilder[K, V]{
 		store:  store,
-		update: make(map[string]*nodeDescriptor[K, V]),
-		delete: make(map[string]*nodeDescriptor[K, V]),
-		index:  newMapper(append([]ReadWriteSeekSyncTruncater{page}, rest...))},
+		update: make(map[uuid.UUID]*nodeDescriptor[K, V]),
+		delete: make(map[uuid.UUID]*nodeDescriptor[K, V]),
+		index:  newMapper(opts.maxCachedPages, append([]ReadWriteSeekSyncTruncater{index}, opts.pages...))},
 	}, nil
 }
 
-// Load retrieves a B+ Tree instance from the given tree store and page/s.
-func Load[K constraints.Ordered, V any](store ReadWriteSeekSyncer, page ReadWriteSeekSyncTruncater, rest ...ReadWriteSeekSyncTruncater) (*bp3.Instance[K, V], error) {
+// Load retrieves a B+ Tree instance from the given store, index, and optionals.
+func Load[K constraints.Ordered, V any](store ReadWriteSeekSyncer, index ReadWriteSeekSyncTruncater, options ...Option) (*bp3.Instance[K, V], error) {
+	opts := buildOptions(options...)
+
 	var record treeRecord[K, V]
 
 	if _, err := store.Seek(0, io.SeekStart); err != nil {
@@ -275,14 +278,14 @@ func Load[K constraints.Ordered, V any](store ReadWriteSeekSyncer, page ReadWrit
 
 	builder := &nodeBuilder[K, V]{
 		store:  store,
-		update: make(map[string]*nodeDescriptor[K, V]),
-		delete: make(map[string]*nodeDescriptor[K, V]),
-		index:  newMapper(append([]ReadWriteSeekSyncTruncater{page}, rest...)),
+		update: make(map[uuid.UUID]*nodeDescriptor[K, V]),
+		delete: make(map[uuid.UUID]*nodeDescriptor[K, V]),
+		index:  newMapper(opts.maxCachedPages, append([]ReadWriteSeekSyncTruncater{index}, opts.pages...)),
 	}
 
-	var root *nodeDescriptor[K, V]
+	var root bp3.NodeDescriptor[K, V]
 
-	if len(record.Root) > 0 {
+	if record.Root != uuid.Nil {
 		root = &nodeDescriptor[K, V]{id: record.Root, builder: builder, loader: builder}
 	}
 
@@ -297,7 +300,7 @@ func Load[K constraints.Ordered, V any](store ReadWriteSeekSyncer, page ReadWrit
 
 // Flush writes the current state of the B+ Tree.
 func Flush[K constraints.Ordered, V any](tree *bp3.Instance[K, V]) error {
-	var root string
+	var root uuid.UUID
 
 	if tree.Root != nil {
 		root = tree.Root.(*nodeDescriptor[K, V]).id

@@ -23,3 +23,11 @@ type NodeBuilder[K constraints.Ordered, V any] interface {
 	Delete(d NodeDescriptor[K, V])                // Delete deletes the specified node descriptor.
 	Flush() error                                 // Flush flushes any pending changes.
 }
+
+func readSafe[K constraints.Ordered, V any](d NodeDescriptor[K, V]) *Node[K, V] {
+	if d == nil {
+		return nil
+	}
+
+	return d.Read()
+}
